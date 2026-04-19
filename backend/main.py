@@ -63,7 +63,7 @@ async def get_concentrations_grid():
             wind_dir = 45.0
             meteo = {"temperature": temp, "windspeed": wind_speed, "winddirection": wind_dir}
 
-    angle_vent = math.radians(270 - wind_dir)
+    rad_dir = math.radians(wind_dir)
 
     points = []
     
@@ -82,15 +82,15 @@ async def get_concentrations_grid():
                 continue
 
             # source 1 (GCT)
-            x_wind1 = dx_jitter * math.cos(angle_vent) - dy_jitter * math.sin(angle_vent)
-            y_wind1 = dx_jitter * math.sin(angle_vent) + dy_jitter * math.cos(angle_vent)
+            x_wind1 = -dx_jitter * math.sin(rad_dir) - dy_jitter * math.cos(rad_dir)
+            y_wind1 = -dx_jitter * math.cos(rad_dir) + dy_jitter * math.sin(rad_dir)
             c1 = calculate_gaussian_plume(x_wind1, y_wind1, EMISSION_RATE_1, H1, wind_speed)
             
             # source 2 (ZI)
             dy2 = (lat - ZI_LAT) * 111000
             dx2 = (lng - ZI_LON) * 92300
-            x_wind2 = dx2 * math.cos(angle_vent) - dy2 * math.sin(angle_vent)
-            y_wind2 = dx2 * math.sin(angle_vent) + dy2 * math.cos(angle_vent)
+            x_wind2 = -dx2 * math.sin(rad_dir) - dy2 * math.cos(rad_dir)
+            y_wind2 = -dx2 * math.cos(rad_dir) + dy2 * math.sin(rad_dir)
             c2 = calculate_gaussian_plume(x_wind2, y_wind2, EMISSION_RATE_2, H2, wind_speed)
             
             conc = c1 + c2

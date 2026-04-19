@@ -48,6 +48,28 @@ export default function DashboardNH3() {
 
   const totalPages = Math.max(1, Math.ceil(data.length / itemsPerPage));
   const currentData = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const [realNames, setRealNames] = useState<{[key: string]: string}>({});
+
+  useEffect(() => {
+    currentData.forEach(p => {
+      const coordKey = `${p.lat}-${p.lng}`;
+      if (!realNames[coordKey]) {
+        setRealNames(prev => ({...prev, [coordKey]: "Recherche..."}));
+        fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${p.lat}&longitude=${p.lng}&localityLanguage=fr`)
+          .then(res => res.json())
+          .then(dt => {
+             const adminList = dt?.localityInfo?.administrative || [];
+             const specific = adminList.reverse().find((a:any) => a.adminLevel >= 5);
+             const name = specific ? specific.name : (dt.locality || p.neighborhood);
+             setRealNames(prev => ({...prev, [coordKey]: name}));
+          })
+          .catch(() => {
+             setRealNames(prev => ({...prev, [coordKey]: p.neighborhood}));
+          });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentData]);
 
   const neighborhoods = Array.from(new Set(data.map(p => p.neighborhood)));
   const chartData = {
@@ -103,7 +125,13 @@ export default function DashboardNH3() {
                      <tr key={idx} className={`border-b border-gray-100 text-sm ${idx % 2 === 0 ? 'bg-white' : 'bg-[#fafbfc]'}`}>
                        <td className="p-3 text-gray-700 border-r border-gray-100 last:border-r-0">{p.lat.toFixed(4)}</td>
                        <td className="p-3 text-gray-700 border-r border-gray-100 last:border-r-0">{p.lng.toFixed(4)}</td>
-                       <td className="p-3 text-gray-700 border-r border-gray-100 last:border-r-0">{p.neighborhood}</td>
+                       <td className="p-3 text-gray-700 border-r border-gray-100 last:border-r-0">
+                         {realNames[`${p.lat}-${p.lng}`] === "Recherche..." ? (
+                           <span className="text-gray-400 italic text-xs animate-pulse">Extraction map...</span>
+                         ) : (
+                           realNames[`${p.lat}-${p.lng}`] || p.neighborhood
+                         )}
+                       </td>
                        <td className="p-3 font-mono border-r border-gray-100 last:border-r-0">{p.concentration.toFixed(2)}</td>
                        <td className="p-3 font-bold border-r border-gray-100 last:border-r-0" style={{ color: p.color }}>{p.riskLevel}</td>
                      </tr>
