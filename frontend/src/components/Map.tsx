@@ -1,58 +1,68 @@
 "use client";
 
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
-interface MapProps {
-  data: any[];
+interface Point {
+  lat: number;
+  lng: number;
+  concentration: number;
+  riskLevel: string;
+  color: string;
 }
 
-export default function Map({ data }: MapProps) {
-  const GABES_CENTER: [number, number] = [33.8950, 10.1000];
-
-  const getColor = (level: string) => {
-    switch (level) {
-      case 'Rouge': return '#ef4444';
-      case 'Orange': return '#f97316';
-      default: return '#22c55e';
-    }
-  };
+export default function Map({ points }: { points: Point[] }) {
+  const center: [number, number] = [33.8800, 10.1000];
 
   return (
-    <MapContainer center={GABES_CENTER} zoom={13} className="h-full w-full">
-      <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-      />
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <MapContainer 
+        center={center} 
+        zoom={12} 
+        style={{ width: '100%', height: '100%' }}
+        zoomControl={false}
+      >
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        />
+        
+        {points?.map((point, idx) => (
+          <CircleMarker
+            key={idx}
+            center={[point.lat, point.lng]}
+            radius={5}
+            pathOptions={{ 
+              color: point.color, 
+              fillColor: point.color, 
+              fillOpacity: 0.8,
+              weight: 0 
+            }}
+          />
+        ))}
+      </MapContainer>
       
-      {data.map((point, idx) => (
-        <CircleMarker
-          key={idx}
-          center={[point.lat, point.lng]}
-          pathOptions={{ 
-            color: getColor(point.riskLevel), 
-            fillColor: getColor(point.riskLevel),
-            fillOpacity: point.riskLevel === 'Rouge' ? 0.7 : 0.4,
-            weight: 0
-          }}
-          radius={point.riskLevel === 'Rouge' ? 14 : point.riskLevel === 'Orange' ? 10 : 5}
-        >
-          <Popup>
-            <div className="text-slate-800 font-sans p-1">
-              <strong className="text-base">{point.neighborhood}</strong>
-              <div className="mt-2 text-sm">
-                Concentration: <strong>{point.concentration} µg/m³</strong>
-              </div>
-              <div className="mt-1 flex items-center gap-1 text-sm font-medium">
-                Statut: 
-                <span style={{color: getColor(point.riskLevel)}}>
-                  {point.riskLevel.toUpperCase()}
-                </span>
-              </div>
-            </div>
-          </Popup>
-        </CircleMarker>
-      ))}
-    </MapContainer>
+      {/* Légende absolue */}
+      <div 
+        style={{
+          position: 'absolute',
+          top: 18,
+          right: 18,
+          background: 'rgba(255,255,255,0.95)',
+          padding: '12px 16px',
+          borderRadius: '8px',
+          zIndex: 1000,
+          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+          pointerEvents: 'none'
+        }}
+      >
+        <h4 className="font-bold text-sm mb-3">Légende (Risque)</h4>
+        <div className="flex flex-col gap-2 text-sm">
+           <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#e74c3c' }}></div>Élevé</div>
+           <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#f39c12' }}></div>Moyen</div>
+           <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#2ecc71' }}></div>Faible</div>
+        </div>
+      </div>
+    </div>
   );
 }
